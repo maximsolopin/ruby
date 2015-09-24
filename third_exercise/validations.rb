@@ -11,49 +11,41 @@ module Validations
          class_variable_get :@@validations
         end
 
-        def validate(validation_type, value, validation_format = "")
-            validations[validation_type] = value
-            @format = validation_format
-
-            #НЕЗНАЮ КАК ПОЛУЧИТЬ ЗНАЧЕНИЕ ПЕРЕМЕННОЙ #{value} (:number в данном случае)
-            # puts self.instance_methods
-            puts self.class.instance_variable_get("@#{value}")
-
-            puts send self , "#{value}"
-            puts var
-            # puts self.class.class_variable_get("#{value}")
-            # puts self.class.instance_variable_get("#{value}")
-            # puts class_variable_get("@@validations")
+        def validate(validation_type, *args)
+            validations[validation_type] = args
         end
     end
 
     module InstanceMethods
         def validate!
             self.class.class_variable_get("@@validations").each do |type, value|
-                puts value
-                send type, value
+                send type, instance_variable_get("@#{value[0]}"), value[1]
             end
             true
         end
 
         def valid?
             validate!
-        rescue
+        rescue RuntimeError => e
+            puts e.message
             false
         end
 
         private
 
-        def presence(val)
+        def presence(val, empty)
+            puts val
             raise "Значение атрибута не должно быть nil или пустой строкой" if val.nil? || val == ""
         end
 
-        def format(var)
-          raise "Неверный формат" if var !~ @format
+        def format(val, validation_format)
+            puts val
+            puts validation_format
+          raise "Неверный формат" if val !~ validation_format
         end
 
-        def type(var)
-          raise "Неверный класс" unless var.class == @format
+        def type(val, validation_class)
+          raise "Неверный класс" unless val.class == validation_class
         end
     end
 end
